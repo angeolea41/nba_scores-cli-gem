@@ -13,14 +13,14 @@ class Scraper
     !get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard > p").text.eql?("No games scheduled.")
   end
 
-  def get_page(url = "http://basketball.realgm.com/nba/scores")
+  def get_page(url = "http://basketball.realgm.com/nba/scores/2016-02-18")
     html = Nokogiri::HTML(open(url))
   end
 
   def get_team_names
     scoreboard = get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard")
     team_names = []
-    scoreboard.css(".game.played").each do |game|
+    scoreboard.css("table.game").each do |game|
       game.css(".team_name").each do |team|
         team_names << team.css("a").attribute("href").value[/(\w+-\w+)/].gsub("-", " ")
       end
@@ -31,9 +31,13 @@ class Scraper
   def get_team_scores
     scoreboard = get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard")
     team_scores = []
-    scoreboard.css(".game.played").each do |game|
-      game.css(".team_score").each do |score|
-        team_scores << score.css("a").text.gsub("\n", "")
+    scoreboard.css("table").each do |game|
+      if !game.attribute("class").value.eql?("game unplayed ")
+        game.css(".team_score").each do |score|
+          team_scores << score.css("a").text.gsub("\n", "")
+        end
+      else 
+        team_scores << nil
       end
     end
     team_scores
@@ -42,7 +46,7 @@ class Scraper
   def get_team_records
     scoreboard = get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard")
     team_records = []
-    scoreboard.css(".game.played").each do |game|
+    scoreboard.css("table.game").each do |game|
       game.css(".team_record").each do |record|
         team_records << record.css("a").text
       end
@@ -53,7 +57,7 @@ class Scraper
   def get_urls
     scoreboard = get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard")
     urls = []
-    scoreboard.css(".game.played").each do |game|
+    scoreboard.css("table.game").each do |game|
       urls << "http://basketball.realgm.com" + game.css("tr:nth-child(5) a").attribute("href").value
       urls << "http://basketball.realgm.com" + game.css("tr:nth-child(5) a").attribute("href").value
     end
@@ -96,7 +100,11 @@ class Scraper
     end
     Teams.verses
   end
-end
 
+  def game_unplayed?
+    scoreboard = get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard")
+    scoreboard.css("table").attribute("class").value.eql?("game unplayed")
+  end
+end
 
 

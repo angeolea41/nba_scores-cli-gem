@@ -13,15 +13,15 @@ class CLI
   end
 
   def call
-    puts "Today's NBA Games:"
-    puts "-------------------"
-    list_games
+    list_games 
     list_options if scraper.games_today?
   end
 
   def list_games
     index = 0
     if scraper.games_today?
+      puts "Today's NBA Games:"
+      puts "-------------------"
       games.each do |game|
         puts "#{game[index].name}: #{game[index].score}"
         puts "#{game[index].record}"
@@ -32,23 +32,25 @@ class CLI
       end
     else
       puts "Sorry, there are no games today"
-      list_additional_options
     end
   end
 
   def list_games_compact
     index = 0
-    games.each.with_index(1) do |game, i|
-      puts "#{i}. #{game[index].name} vs. #{game[index+1].name}"
+    if games.all? {|game| game[0].score != nil}
+      games_played = games.select {|game| game[0].score != nil}
+      unplayed_games = games.select {|game| game[0].score == nil}
+      games_played.each.with_index(1) do |game, i|
+        puts "#{i}. #{game[index].name} vs. #{game[index+1].name}"
+      end
+      unplayed_games.each do |game|
+        puts "No stats available for #{game[index].name} vs. #{game[index+1].name}"
+      end
+      get_game
+    else
+      puts "No stats at this time."
+      list_options
     end
-    puts "Which game would you like player stats on? Please enter 1 - #{games.count}"
-    input = gets.strip.to_i
-    while !input.between?(1, games.count)
-      puts "Input not valid. Please enter 1 - #{games.count}"
-      input = gets.strip.to_i
-    end
-    scraper.get_player_stats(games[input][0].url, games[input][0], games[input][1])
-    player_stats(games[input][0], games[input][1])
   end  
 
   def list_options
@@ -60,20 +62,13 @@ class CLI
       list_games_compact
     elsif input == 2
       list_games
-    elsif input == exit
+    elsif input == 3
       goodbye 
     end
   end
-
-  def list_additional_options
-    print "Would you like to see yesterday's scores?(y/n): "
-    input = gets.strip
-    if input == "y"
-      CLI.new.call
   
 
   def player_stats(team_1, team_2) 
-    binding.pry
     count = 0 
     puts "#{team_1.name}: #{team_1.score}"
     puts "#{team_1.record}"
@@ -90,6 +85,17 @@ class CLI
     until count == team_2.players.length
       puts "#{team_2.players[count].name} - Points: #{team_2.players[count].points} Assists: #{team_2.players[count].assists}  Rebounds: #{team_2.players[count].rebounds} Steals: #{team_2.players[count].steals}"    
     end
+  end
+
+  def get_game
+    puts "Which game would you like player stats on? Please enter 1 - #{games.count}"
+    input = gets.strip.to_i
+    while !input.between?(1, games.count)
+      puts "Input not valid. Please enter 1 - #{games.count}"
+      input = gets.strip.to_i
+    end
+    scraper.get_player_stats(games[input][0].url, games[input][0], games[input][1])
+    player_stats(games[input][0], games[input][1])
   end
 
   def goodbye
