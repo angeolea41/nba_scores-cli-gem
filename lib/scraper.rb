@@ -7,13 +7,11 @@ require_relative './teams.rb'
 require_relative './players.rb'
 class Scraper
 
-
-
   def games_today?
     !get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard > p").text.eql?("No games scheduled.")
   end
 
-  def get_page(url = "http://basketball.realgm.com/nba/scores/2016-02-18")
+  def get_page(url = "http://basketball.realgm.com/nba/scores/")
     html = Nokogiri::HTML(open(url))
   end
 
