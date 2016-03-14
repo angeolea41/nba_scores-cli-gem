@@ -3,16 +3,23 @@ require 'open-uri'
 require 'pry'
 require 'date'
 
-require_relative './teams.rb'
+require_relative './yesterdays_teams.rb'
 require_relative './players.rb'
-class Scraper
+
+
+class YesterdaysGames
+
+  attr_accessor :get_page
+
+  def initialize
+    yesterday = Date.today.prev_day
+    url = "http://basketball.realgm.com/nba/scores/#{yesterday.to_s}"
+
+    @get_page = Nokogiri::HTML(open(url))
+  end
 
   def games_today?
     !get_page.css("#site-takeover > div.main-container > div > div.large-column-left.scoreboard > p").text.eql?("No games scheduled.")
-  end
-
-  def get_page(url = "http://basketball.realgm.com/nba/scores/")
-    html = Nokogiri::HTML(open(url))
   end
 
   def get_team_names
@@ -34,7 +41,7 @@ class Scraper
         game.css(".team_score").each do |score|
           team_scores << score.css("a").text.gsub("\n", "")
         end
-      else 
+      else
         team_scores << nil
       end
     end
@@ -76,8 +83,8 @@ class Scraper
         blocks = player.css("td:nth-child(16)").text
         steals = player.css("td:nth-child(15)").text
         info = {:name => name, :points => points, :rebounds => rebounds, :blocks => blocks, :steals => steals, :assists => assists}
-        player = Players.new(info) 
-        player.team = team_1 if count == 0 
+        player = Players.new(info)
+        player.team = team_1 if count == 0
         player.team = team_2 if count == 1
         players << player
       end
@@ -94,9 +101,13 @@ class Scraper
     records = get_team_records
     urls = get_urls
     names.each.with_index do |name, index|
-      Teams.new(name, scores[index], records[index], urls[index])
+      YesterdaysTeams.new(name, scores[index], records[index], urls[index])
     end
-    Teams.verses
+    YesterdaysTeams.verses
+  end
+
+  def self.all
+    @@yesterdaysgames
   end
 
   def game_unplayed?
@@ -104,5 +115,3 @@ class Scraper
     scoreboard.css("table").attribute("class").value.eql?("game unplayed")
   end
 end
-
-

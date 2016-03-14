@@ -1,4 +1,4 @@
-class Teams
+class TodaysTeams
 
   @@all = []
 
@@ -23,4 +23,5 @@ class Teams
   def self.all
     @@all
   end
+  
 end
